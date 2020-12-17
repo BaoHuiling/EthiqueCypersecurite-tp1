@@ -5,7 +5,7 @@ import http.server, urllib.parse, sqlite3, threading, socketserver, requests, js
 def meteo():
 	cs_url  = 'http://api.openweathermap.org/data/2.5/forecast?id=524901&appid=554632cfaef8c83ef4f1f5aec5fbe697'
 	r = requests.get(cs_url)
- 	#d_text = json.loads(text)
+	# d_text = json.loads(text)
 	return r.json()
 
 # TODO
@@ -266,7 +266,15 @@ class MyHandler(http.server.BaseHTTPRequestHandler):
 			q = self.rfile.read(int(self.headers['content-length'])).decode(encoding="utf-8")
 			query = urllib.parse.parse_qs(q,keep_blank_values=1,encoding='utf-8')
 			path = "/Capteur"
-			rep = self.mysql.insert(path,query)
+			val = ', '.join('%s' % it for it in query.values())
+			val = val.split(",")
+			id = val[0].split('\'')[1]
+			selStr = "/Capteur/%s" % (id)
+			res = self.mysql.select(selStr)
+			if res:
+				rep = self.mysql.insert(path, query)
+			else:
+				print("Insert error")
 			self.send_response(200)
 			self.send_header("Content-type", "text/html")
 			self.end_headers()
@@ -303,6 +311,7 @@ class MySQL():
 
 	def select(self,path):
 		elem = path.split('/')
+		req = None
 		if(elem[1]=="chart"):
 			print("chart part")
 			req = "select * from Facture"
@@ -324,14 +333,18 @@ class MySQL():
 			req = "select * from Facture"
 			fac = self.c.execute(req).fetchall()
 			return save(fac)
-		elif len(elem) == 2:
-			req = "select * from %s" %(elem[1])
-		elif len(elem) == 3:
-			req = "select * from %s where id=%s" %(elem[1],elem[2])
-		elif len(elem) == 4:
-			req = "select %s from %s where id=%s" %(elem[3],elem[1],elem[2])
-		elif len(elem) == 5:
-			req = "select %s from %s where %s=%s" %(elem[4],elem[1],elem[2],elem[3])
+		if(elem[1] == "Capteur"):
+			req = "SELECT * FROM TypeCap WHERE id=%s" % (elem[2])
+			print(req)
+			return self.c.execute(req).fetchall()
+		# elif len(elem) == 2:
+		# 	req = "select * from %s" %(elem[1])
+		# elif len(elem) == 3:
+		# 	req = "select * from %s where id=%s" %(elem[1],elem[2])
+		# elif len(elem) == 4:
+		# 	req = "select %s from %s where id=%s" %(elem[3],elem[1],elem[2])
+		# elif len(elem) == 5:
+		# 	req = "select %s from %s where %s=%s" %(elem[4],elem[1],elem[2],elem[3])
 		else:
 			print("GET :URI format error")
 		return self.c.execute(req).fetchall()
@@ -351,12 +364,14 @@ class MySQL():
 		print(name)
 		pwd = "".join(query["pwd"])
 		print(pwd)
-		req = 'SELECT pwd FROM Users WHERE user_name="%s";' %(name)
+		# req = 'SELECT * FROM Users WHERE user_name="%s" AND pwd="%s";' % (name, pwd)		# Can be skipped
+		req = 'SELECT pwd FROM Users WHERE user_name="%s";' % name		# Correction
 		print(req)
 		res = self.c.execute(req).fetchall()
 		res = res[0][0]
 		print(res)
-		if (len(res)>0) and (pwd == res):
+		# if res:	# Can be skipped
+		if (len(res) > 0) and (pwd == res):		# Correction
 			return config()
 
 		return hellopage_alarm()
