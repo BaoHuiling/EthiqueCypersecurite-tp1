@@ -135,7 +135,7 @@ def fausse_donnee_alarm():
 	<html>\n\
 	<head>\n\
 	<script language= "javascript" >\n\
-		alert( "Please enter valid sensor type." );\n\
+		alert( "Sensor type invalid or character illegal." );\n\
 	</script>\n\
 	</head>\n\
 	</html>\n\
@@ -264,7 +264,7 @@ class MySQL():
 		val = ', '.join('"%s"' %v[0] for v in query.values())
 		print(attr,val)
 
-		if(val.find(';')!=-1 or val.find('"')!=-1):
+		if(val.find(';')!=-1):
 			return fausse_donnee_alarm()
 
 		req = "insert into %s (%s) values (%s)" %(path.split('/')[1], attr, val)
