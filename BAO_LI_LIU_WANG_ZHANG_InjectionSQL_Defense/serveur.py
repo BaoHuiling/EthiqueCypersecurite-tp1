@@ -194,10 +194,11 @@ class MyHandler(http.server.BaseHTTPRequestHandler):
 			query = urllib.parse.parse_qs(q,keep_blank_values=1,encoding='utf-8')
 			path = "/Capteur"
 
-			# Défense contre fausse données
 			val = ', '.join('%s' % it for it in query.values())
 			val = val.split(",")
 			id = val[0].split('\'')[1]
+
+			# Défense contre fausse données
 			selStr = "/Capteur/%s" % (id)
 			res = self.mysql.select(selStr)
 
@@ -262,6 +263,10 @@ class MySQL():
 		attr = ', '.join(query.keys())
 		val = ', '.join('"%s"' %v[0] for v in query.values())
 		print(attr,val)
+
+		if(val.find(';')!=-1 or val.find('"')!=-1):
+			return fausse_donnee_alarm()
+
 		req = "insert into %s (%s) values (%s)" %(path.split('/')[1], attr, val)
 		print(req)
 		self.c.execute(req)
@@ -276,6 +281,8 @@ class MySQL():
 		print(pwd)
 
 		# Défense en limitant le nombre de l'instruction
+		if(name.find(';')!=-1 or name.find('"')!=-1 or pwd.find(';')!=-1 or pwd.find('"')!=-1):
+			return hellopage_alarm()
 
 		req = 'SELECT pwd FROM Users WHERE user_name="%s";' % name		# Correction
 		print(req)
